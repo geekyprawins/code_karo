@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:code_karo/ui/screens/events.dart';
 import 'package:code_karo/ui/screens/local_notifs.dart';
 import 'package:code_karo/ui/screens/utils.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart';
 import 'package:confetti/confetti.dart';
+import 'package:flutter/services.dart';
+import 'dart:developer' as developer;
 
 class PlatformsScreen extends StatefulWidget {
   const PlatformsScreen({Key? key}) : super(key: key);
@@ -18,7 +23,12 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
   List<Map<String, String>> platforms = [];
 
   late ConfettiController _confettiController;
+
+  ConnectivityResult _connectionStatus = ConnectivityResult.none;
+  final Connectivity _connectivity = Connectivity();
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   void getPlatforms() async {
+    if (_connectionStatus == ConnectivityResult.none) return;
     final dio = Dio();
     try {
       var response = await dio.get("https://kontests.net/api/v1/sites");
@@ -44,6 +54,11 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 5),
     );
+
+    initConnectivity();
+
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
 
     AwesomeNotifications().isNotificationAllowed().then(
       (isAllowed) {
@@ -93,6 +108,36 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
     // TODO: implement dispose
     super.dispose();
     _confettiController.dispose();
+    _connectivitySubscription.cancel();
+  }
+
+  Future<void> initConnectivity() async {
+    late ConnectivityResult result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      developer.log('Couldn\'t check connectivity status', error: e);
+      return;
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+    setState(() {
+      _connectionStatus = result;
+      if (_connectionStatus != ConnectivityResult.none) {
+        getPlatforms();
+      }
+    });
   }
 
   @override
@@ -106,63 +151,73 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
         child: Stack(
           children: [
             Center(
-              child: (platforms.isEmpty)
-                  ? const CircularProgressIndicator(
-                      color: Colors.white,
+              child: (_connectionStatus == ConnectivityResult.none)
+                  ? Center(
+                      child: Container(
+                        child: const Center(child: Text("You're offline!")),
+                        color: Colors.pink,
+                        width: 200,
+                        height: 75,
+                      ),
                     )
-                  : ListView.separated(
-                      itemBuilder: (context, index) {
-                        String platformName =
-                            platforms[index].keys.elementAt(0);
-                        String? platformCode = platforms[index][platformName];
-                        return GestureDetector(
-                          child: Container(
-                            color: Colors.teal.withOpacity(0.8),
-                            width: 150,
-                            height: 75,
-                            child: Center(
-                              child: Text(platformName),
-                            ),
-                          ),
-                          onTap:
-                              // LocalNotifs.createDummyNotif,
-                              //     () {
-                              //   Navigator.push(
-                              //     context,
-                              //     MaterialPageRoute(
-                              //       builder: (context) =>
-                              //           EventsScreen(platformCode: platformCode!),
-                              //     ),
-                              //   );
-                              // },
+                  : (platforms.isEmpty)
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
+                      : ListView.separated(
+                          itemBuilder: (context, index) {
+                            String platformName =
+                                platforms[index].keys.elementAt(0);
+                            String? platformCode =
+                                platforms[index][platformName];
+                            return GestureDetector(
+                              child: Container(
+                                color: Colors.teal.withOpacity(0.8),
+                                width: 150,
+                                height: 75,
+                                child: Center(
+                                  child: Text(platformName),
+                                ),
+                              ),
+                              onTap:
+                                  // LocalNotifs.createDummyNotif,
+                                  //     () {
+                                  //   Navigator.push(
+                                  //     context,
+                                  //     MaterialPageRoute(
+                                  //       builder: (context) =>
+                                  //           EventsScreen(platformCode: platformCode!),
+                                  //     ),
+                                  //   );
+                                  // },
 
-                              () async {
-                            NotificationWeekAndTime? pickedSchedule =
-                                await pickSchedule(context);
+                                  () async {
+                                NotificationWeekAndTime? pickedSchedule =
+                                    await pickSchedule(context);
 
-                            if (pickedSchedule != null) {
-                              LocalNotifs.createWaterReminderNotification(
-                                      pickedSchedule)
-                                  .then((value) {
-                                // ScaffoldMessenger.of(context).showSnackBar(
-                                //   const SnackBar(
-                                //     content: Text(
-                                //       "Reminder created! ✌️",
-                                //       style: TextStyle(color: Colors.white),
-                                //     ),
-                                //     duration: Duration(milliseconds: 1200),
-                                //     backgroundColor: Colors.black,
-                                //   ),
-                                // );
-                                _confettiController.play();
-                              });
-                            }
+                                if (pickedSchedule != null) {
+                                  LocalNotifs.createWaterReminderNotification(
+                                          pickedSchedule)
+                                      .then((value) {
+                                    // ScaffoldMessenger.of(context).showSnackBar(
+                                    //   const SnackBar(
+                                    //     content: Text(
+                                    //       "Reminder created! ✌️",
+                                    //       style: TextStyle(color: Colors.white),
+                                    //     ),
+                                    //     duration: Duration(milliseconds: 1200),
+                                    //     backgroundColor: Colors.black,
+                                    //   ),
+                                    // );
+                                    _confettiController.play();
+                                  });
+                                }
+                              },
+                            );
                           },
-                        );
-                      },
-                      separatorBuilder: (context, index) => const Divider(),
-                      itemCount: platforms.length,
-                    ),
+                          separatorBuilder: (context, index) => const Divider(),
+                          itemCount: platforms.length,
+                        ),
             ),
             ConfettiWidget(
               confettiController: _confettiController,
