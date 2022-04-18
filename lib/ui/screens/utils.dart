@@ -14,9 +14,8 @@ class NotificationWeekAndTime {
   });
 }
 
-Future<NotificationWeekAndTime?> pickSchedule(
-  BuildContext context,
-) async {
+Future<NotificationWeekAndTime?> pickSchedule(BuildContext context,
+    {required String startTime}) async {
   List<String> weekdays = [
     'Mon',
     'Tue',
@@ -29,38 +28,47 @@ Future<NotificationWeekAndTime?> pickSchedule(
   TimeOfDay? timeOfDay;
   DateTime now = DateTime.now();
   int? selectedDay;
+  DateTime? contestDay;
 
-  await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            'I want to be reminded every:',
-            textAlign: TextAlign.center,
-          ),
-          content: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 3,
-            children: [
-              for (int index = 0; index < weekdays.length; index++)
-                ElevatedButton(
-                  onPressed: () {
-                    selectedDay = index + 1;
-                    Navigator.pop(context);
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
-                      Colors.teal,
-                    ),
-                  ),
-                  child: Text(weekdays[index]),
-                ),
-            ],
-          ),
-        );
-      });
+  // await showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text(
+  //           'I want to be reminded every:',
+  //           textAlign: TextAlign.center,
+  //         ),
+  //         content: Wrap(
+  //           alignment: WrapAlignment.center,
+  //           spacing: 3,
+  //           children: [
+  //             for (int index = 0; index < weekdays.length; index++)
+  //               ElevatedButton(
+  //                 onPressed: () {
+  //                   selectedDay = index + 1;
+  //                   Navigator.pop(context);
+  //                 },
+  //                 style: ButtonStyle(
+  //                   backgroundColor: MaterialStateProperty.all(
+  //                     Colors.teal,
+  //                   ),
+  //                 ),
+  //                 child: Text(weekdays[index]),
+  //               ),
+  //           ],
+  //         ),
+  //       );
+  //     });
 
-  if (selectedDay != null) {
+  contestDay = await showDatePicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime(2022),
+    lastDate: DateTime(2023),
+  );
+
+  if (contestDay != null) {
+    print("Day of week is : ${contestDay.weekday}");
     timeOfDay = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(
@@ -81,7 +89,9 @@ Future<NotificationWeekAndTime?> pickSchedule(
 
     if (timeOfDay != null) {
       return NotificationWeekAndTime(
-          dayOfTheWeek: selectedDay!, timeOfDay: timeOfDay);
+        dayOfTheWeek: contestDay.weekday,
+        timeOfDay: timeOfDay,
+      );
     }
   }
   return null;

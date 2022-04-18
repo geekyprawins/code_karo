@@ -1,7 +1,12 @@
 import 'package:code_karo/ui/screens/open_links.dart';
+import 'package:code_karo/ui/screens/utils.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart';
+
+import 'event_info.dart';
+import 'local_notifs.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({Key? key, required this.platformCode}) : super(key: key);
@@ -13,7 +18,10 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
-  List<Map<String, String>> events = [];
+  List<EventInfo> events = [];
+
+  late ConfettiController _confettiController;
+
   void getEvents() async {
     final dio = Dio();
     try {
@@ -22,9 +30,14 @@ class _EventsScreenState extends State<EventsScreen> {
       var resArray = response.data.toList();
       // print(resArray);
       for (var i = 0; i < resArray.length; i++) {
-        Map<String, String> myEvent = {
-          resArray[i]["name"].toString(): resArray[i]["url"].toString()
-        };
+        EventInfo myEvent = EventInfo(
+          eventURL: resArray[i]["url"].toString(),
+          eventName: resArray[i]["name"].toString(),
+          endTime: resArray[i]["end_time"].toString(),
+          duration: resArray[i]["duration"].toString(),
+          startTime: resArray[i]["start_time"].toString(),
+        );
+
         events.add(myEvent);
       }
       setState(() {});
@@ -38,6 +51,17 @@ class _EventsScreenState extends State<EventsScreen> {
     // TODO: implement initState
     super.initState();
     getEvents();
+
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 5),
+    );
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _confettiController.dispose();
   }
 
   @override
@@ -48,32 +72,93 @@ class _EventsScreenState extends State<EventsScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(18.0),
-        child: Center(
-          child: (events.isEmpty)
-              ? const CircularProgressIndicator(
-                  color: Colors.white,
-                )
-              : ListView.separated(
-                  itemBuilder: (context, index) {
-                    String eventName = events[index].keys.elementAt(0);
-                    String? eventURL = events[index][eventName];
-                    return GestureDetector(
-                      child: Container(
-                        color: Colors.teal.withOpacity(0.8),
-                        width: 150,
-                        height: 75,
-                        child: Center(
-                          child: Text(eventName),
+        child: Stack(children: [
+          Center(
+            child: (events.isEmpty)
+                ? const CircularProgressIndicator(
+                    color: Colors.white,
+                  )
+                : ListView.separated(
+                    itemBuilder: (context, index) {
+                      String eventName = events[index].eventName;
+                      String? eventURL = events[index].eventURL;
+                      String startTime = events[index].startTime;
+                      return GestureDetector(
+                        child: Container(
+                          color: Colors.teal.withOpacity(0.8),
+                          width: 150,
+                          height: 100,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(eventName),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                      primary: Colors.orangeAccent),
+                                  onPressed: () async {
+                                    NotificationWeekAndTime? pickedSchedule =
+                                        await pickSchedule(
+                                      context,
+                                      startTime: startTime,
+                                    );
+
+                                    if (pickedSchedule != null) {
+                                      LocalNotifs
+                                              .createContestReminderNotification(
+                                                  pickedSchedule,
+                                                  contestName: eventName)
+                                          .then((value) {
+                                        // ScaffoldMessenger.of(context).showSnackBar(
+                                        //   const SnackBar(
+                                        //     content: Text(
+                                        //       "Reminder created! ✌️",
+                                        //       style: TextStyle(color: Colors.white),
+                                        //     ),
+                                        //     duration: Duration(milliseconds: 1200),
+                                        //     backgroundColor: Colors.black,
+                                        //   ),
+                                        // );
+                                        _confettiController.play();
+                                      });
+                                    }
+                                  },
+                                  child: const Text(
+                                    "Set Reminder",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      onTap: () {
-                        OpenLinks.openLink(url: eventURL!);
-                      },
-                    );
-                  },
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemCount: events.length),
-        ),
+                        onTap: () {
+                          OpenLinks.openLink(url: eventURL);
+                        },
+                      );
+                    },
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemCount: events.length),
+          ),
+          ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirectionality: BlastDirectionality
+                .explosive, // don't specify a direction, blast randomly
+            // shouldLoop: true, // start again as soon as the animation is finished
+            colors: const [
+              Colors.green,
+              Colors.blue,
+              Colors.pink,
+              Colors.orange,
+              Colors.purple
+            ],
+            maxBlastForce: 200,
+            minBlastForce: 100, // manually specify the colors to be used
+            gravity: 0.7,
+            numberOfParticles: 200,
+            // createParticlePath: drawStar, // define a custom shape/path.
+          ),
+        ]),
       ),
     );
   }

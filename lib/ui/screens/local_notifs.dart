@@ -16,14 +16,15 @@ class LocalNotifs {
     );
   }
 
-  static Future<void> createWaterReminderNotification(
-      NotificationWeekAndTime notificationSchedule) async {
+  static Future<void> createContestReminderNotification(
+      NotificationWeekAndTime notificationSchedule,
+      {required String contestName}) async {
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: createUniqueId(),
         channelKey: 'scheduled_channel',
-        title: '${Emojis.wheater_droplet} Add some water to your plant!',
-        body: 'Water your plant regularly to keep it healthy.',
+        title: '${Emojis.computer_laptop} Contest in an hour!!!',
+        body: 'Get ready for $contestName',
         notificationLayout: NotificationLayout.Default,
       ),
       actionButtons: [
