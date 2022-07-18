@@ -20,7 +20,6 @@ class PlatformsScreen extends StatefulWidget {
 
 class _PlatformsScreenState extends State<PlatformsScreen> {
   List<Map<String, String>> platforms = [];
-
   ConnectivityResult _connectionStatus = ConnectivityResult.none;
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;

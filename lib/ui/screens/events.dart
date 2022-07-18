@@ -30,14 +30,7 @@ class _EventsScreenState extends State<EventsScreen> {
       var resArray = response.data.toList();
       // print(resArray);
       for (var i = 0; i < resArray.length; i++) {
-        EventInfo myEvent = EventInfo(
-          eventURL: resArray[i]["url"].toString(),
-          eventName: resArray[i]["name"].toString(),
-          endTime: resArray[i]["end_time"].toString(),
-          duration: resArray[i]["duration"].toString(),
-          startTime: resArray[i]["start_time"].toString(),
-        );
-
+        EventInfo myEvent = EventInfo.fromJson(resArray[i]);
         events.add(myEvent);
       }
       setState(() {});
