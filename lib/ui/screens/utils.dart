@@ -26,7 +26,7 @@ Future<NotificationWeekAndTime?> pickSchedule(BuildContext context,
     'Sun',
   ];
   TimeOfDay? timeOfDay;
-  DateTime now = DateTime.now();
+  DateTime eventTime = DateTime.parse(startTime).toLocal();
   int? selectedDay;
   DateTime? contestDay;
 
@@ -62,9 +62,9 @@ Future<NotificationWeekAndTime?> pickSchedule(BuildContext context,
 
   contestDay = await showDatePicker(
     context: context,
-    initialDate: DateTime.now(),
-    firstDate: DateTime(2022),
-    lastDate: DateTime(2023),
+    initialDate: DateTime.parse(startTime).toLocal(),
+    firstDate: DateTime(DateTime.now().year),
+    lastDate: DateTime(DateTime.now().year + 1),
   );
 
   if (contestDay != null) {
@@ -72,8 +72,8 @@ Future<NotificationWeekAndTime?> pickSchedule(BuildContext context,
     timeOfDay = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(
-          now.add(
-            const Duration(minutes: 1),
+          eventTime.subtract(
+            const Duration(minutes: 30),
           ),
         ),
         builder: (BuildContext context, Widget? child) {

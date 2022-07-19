@@ -20,11 +20,12 @@ class PlatformsScreen extends StatefulWidget {
 
 class _PlatformsScreenState extends State<PlatformsScreen> {
   List<Map<String, String>> platforms = [];
-  ConnectivityResult _connectionStatus = ConnectivityResult.none;
+  ConnectivityResult? _connectionStatus;
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   void getPlatforms() async {
     if (_connectionStatus == ConnectivityResult.none) return;
+    if (platforms.isNotEmpty) return;
     final dio = Dio();
     try {
       var response = await dio.get("https://kontests.net/api/v1/sites");
@@ -36,7 +37,9 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
         };
         platforms.add(myPlatform);
       }
-      setState(() {});
+      setState(() {
+        print("Getting platforms...");
+      });
     } catch (e) {
       print(e);
     }
@@ -46,9 +49,7 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-
     initConnectivity();
-
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
 
@@ -118,15 +119,14 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
     if (!mounted) {
       return Future.value(null);
     }
-
-    return _updateConnectionStatus(result);
+    _updateConnectionStatus(result);
   }
 
-  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+  void _updateConnectionStatus(ConnectivityResult result) {
     setState(() {
       _connectionStatus = result;
-      if (_connectionStatus != ConnectivityResult.none) {
-        getPlatforms();
+      if (_connectionStatus != ConnectivityResult.none && platforms.isEmpty) {
+        // getPlatforms();
       }
     });
   }

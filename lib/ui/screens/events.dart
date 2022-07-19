@@ -76,6 +76,46 @@ class _EventsScreenState extends State<EventsScreen> {
                       String eventName = events[index].eventName;
                       String? eventURL = events[index].eventURL;
                       String startTime = events[index].startTime;
+                      String startDay =
+                          DateTime.parse(startTime).toLocal().day.toString() +
+                              ' ';
+                      List<String> months = [
+                        'January',
+                        'February',
+                        'March',
+                        'April',
+                        'May',
+                        'June',
+                        'July',
+                        'August',
+                        'September',
+                        'October',
+                        'November',
+                        'December'
+                      ];
+                      String startMonth = months[
+                              DateTime.parse(startTime).toLocal().month - 1] +
+                          ' ';
+                      String startYear =
+                          DateTime.parse(startTime).toLocal().year.toString();
+                      String startHr =
+                          DateTime.parse(startTime).toLocal().hour.toString();
+                      String startMin =
+                          DateTime.parse(startTime).toLocal().minute.toString();
+                      if (startMin == '0') {
+                        startMin = '';
+                      } else {
+                        startMin = ':' + startMin;
+                      }
+                      String startSec =
+                          DateTime.parse(startTime).toLocal().second.toString();
+                      String displayDate = startDay +
+                          startMonth +
+                          startYear +
+                          ' @ ' +
+                          startHr +
+                          startMin +
+                          ' hrs';
                       return GestureDetector(
                         child: Container(
                           color: Colors.teal.withOpacity(0.8),
@@ -83,12 +123,14 @@ class _EventsScreenState extends State<EventsScreen> {
                           height: 100,
                           child: Center(
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 Text(eventName),
+                                Text(displayDate),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                      primary: Colors.orangeAccent),
+                                    primary: Colors.orangeAccent,
+                                  ),
                                   onPressed: () async {
                                     NotificationWeekAndTime? pickedSchedule =
                                         await pickSchedule(
